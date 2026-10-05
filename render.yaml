@@ -1,0 +1,38 @@
+# Render blueprint — free-tier backend.
+# Docs: https://render.com/docs/blueprint-spec
+#
+# IMPORTANT: the Render *free* instance spins down after ~15 min of inactivity.
+# The first request after an idle period takes 30–60 s while the container
+# boots. On the frontend the user sees a "Processing…" state that covers this,
+# but for a smoother experience use a paid always-on instance.
+
+services:
+  - type: web
+    name: mediasave-api
+    runtime: docker
+    dockerfilePath: ./backend/Dockerfile
+    dockerContext: ./backend
+    plan: free
+    region: singapore
+    healthCheckPath: /api/health
+    # Comfy platform / YouTube extraction can be slow on a shared free CPU.
+    autoDeploy: true
+    envVars:
+      - key: PYTHON_VERSION
+        value: "3.12.11"
+      - key: ALLOWED_ORIGINS
+        # ⚠️ Replace with your real Netlify domain after the first deploy,
+        #    e.g. https://mediasave-pro.netlify.app
+        sync: false
+      - key: EXTRACT_TIMEOUT
+        value: "30"
+      - key: TMP_DIR
+        value: /tmp/mediasave
+      - key: MAX_CONCURRENT_JOBS
+        value: "1"
+      - key: JOB_RATE_LIMIT
+        value: "30"
+      - key: JOB_RATE_WINDOW_SEC
+        value: "600"
+      - key: JOB_TTL_SEC
+        value: "900"
