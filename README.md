@@ -324,3 +324,82 @@ fetched — private/members-only posts are rejected by design.
 - **No automated tests** in either app. The only automated check is
   `cd frontend && npm run typecheck` (`tsc --noEmit`). Backend is verified manually
   via <http://localhost:8000/docs>.
+
+---
+
+## 10. Free deployment (Netlify + Render)
+
+```
+GitHub (mediasave-pro)  ──►  Netlify   frontend  https://mediasave-pro.netlify.app
+                       └─►  Render    backend   https://mediasave-api.onrender.com
+```
+The frontend only calls the backend from the browser, so the API must be CORS-allowed
+(`ALLOWED_ORIGINS` in `render.yaml`).
+
+### Backend → Render (free tier, Docker)
+
+1. <https://render.com> → sign up with the **same GitHub account**.
+2. **New → Blueprint** → pick `mediasave-pro` → Apply. `render.yaml` already sets
+   `dockerfilePath: ./backend/Dockerfile`, `plan: free`, health check `/api/health`.
+3. Wait for the build (ffmpeg + Deno install inside the image) and copy the URL —
+   it should be `https://mediasave-api.onrender.com`.
+4. Free instances **spin down after ~15 min idle**; the first request then takes
+   30–60 s to wake up. Render sends a "please wait" on wake-up, so a slightly slower
+   first download is expected.
+
+### Frontend → Netlify (free tier)
+
+```bash
+cd frontend
+netlify login
+netlify sites:create --name mediasave-pro
+netlify env:set NEXT_PUBLIC_API_URL  https://mediasave-api.onrender.com
+netlify env:set NEXT_PUBLIC_SITE_URL https://mediasave-pro.netlify.app
+netlify deploy --build --prod
+```
+- `NEXT_PUBLIC_*` are inlined **at build time** — change them and redeploy.
+- Set **Visitor access → Require login = OFF** on the site, otherwise every page
+  returns a 401 login redirect (Google cannot index that).
+- After pushing new commits to GitHub you can also connect the repo in Netlify for
+  automatic deploys; the CLI deploy path already works without Git.
+
+### Redeploy checklist
+1. `npm run typecheck && npm run build` locally (catches build-time env problems).
+2. `git add -A && git commit -m "..." && git push origin master` (Render auto-deploys).
+3. `netlify deploy --build --prod` for frontend changes.
+4. Verify: <https://mediasave-pro.netlify.app/robots.txt> and `/sitemap.xml` return
+   200, and the home page loads with a green `status` from the backend health check.
+
+---
+
+## 11. SEO
+
+Already implemented in code:
+
+| Item | Where |
+| ---- | ----- |
+| Per-platform landing pages (7 + GIF + audio) | `frontend/app/*-downloader/page.tsx` via `lib/landingPages.ts` |
+| Unique title/description/keywords + canonical per page | `lib/seo.ts` → `pageMetadata()` |
+| `sitemap.xml` + `robots.txt` generated from the route list | `app/sitemap.ts`, `app/robots.ts` |
+| JSON-LD: `WebSite`, `SoftwareApplication`, `HowTo`, `FAQPage`, `BreadcrumbList` | `lib/seo.ts` + `<JsonLd />` |
+| Open Graph / Twitter card image | `app/opengraph-image.tsx` (1200×630) |
+| Favicon + web manifest | `app/icon.svg`, `app/manifest.ts` |
+| Internal linking (tools grid ↔ landing pages ↔ FAQs) | `lib/content.ts`, `LandingPageView.tsx` |
+| Security + immutable asset headers, legacy 301 slugs | `frontend/netlify.toml` |
+
+Not code — do these after launch:
+
+1. **Google Search Console**: add the property, submit `sitemap.xml`, then
+   "URL Inspection → Request indexing" for the 9 landing pages.
+2. **Google Analytics** (or Plausible/Umami): add the script in `layout.tsx`.
+3. **Custom domain**: buy `mediasave*.com` (~$10/yr) — keywords in the domain help,
+   and update `NEXT_PUBLIC_SITE_URL` + redeploy so canonical/sitemap/OG use it.
+4. **Content depth**: the ranking pages are thin; add unique long-form copy, real
+   screenshots and FAQs per platform. Thin doorway pages can hurt, not help.
+5. **Backlinks/off-page**: share on Reddit/Quora/Pinterest/YouTube descriptions —
+   this is the biggest lever for a new domain, more than any meta tag.
+6. **Real usage signals**: Google rewards fast, mobile-friendly pages that people
+   actually use — Netlify CDN + static prerender already covers the technical side.
+
+> Nobody can guarantee a #1 ranking. These changes are the on-page foundation;
+> ranking depends on competition, links, and time.
