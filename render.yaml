@@ -13,7 +13,8 @@ services:
     dockerfilePath: ./backend/Dockerfile
     dockerContext: ./backend
     plan: free
-    region: singapore
+    # No `region` pinned: free-plan regions are limited, leaving it default
+    # avoids a blueprint apply error.
     healthCheckPath: /api/health
     # Comfy platform / YouTube extraction can be slow on a shared free CPU.
     autoDeploy: true
