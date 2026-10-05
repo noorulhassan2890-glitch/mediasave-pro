@@ -33,3 +33,5 @@ npm-debug.log*
 # Local Netlify folder
 .netlify
 frontend/netlify/functions/tmp/
+__pycache__/
+*.pyc
