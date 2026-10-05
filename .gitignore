@@ -17,6 +17,10 @@ next-env.d.ts
 # Backend scratch
 backend/tmp/
 
+# Vendored copy of backend/app (needed because Netlify only clones frontend/).
+# Keep it in sync with backend/app via `npm run prebuild` in frontend/.
+frontend/netlify/functions/.netlify/
+
 # OS / editor
 .DS_Store
 Thumbs.db
@@ -28,3 +32,4 @@ Thumbs.db
 npm-debug.log*
 # Local Netlify folder
 .netlify
+frontend/netlify/functions/tmp/

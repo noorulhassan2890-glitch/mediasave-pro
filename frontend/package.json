@@ -5,6 +5,7 @@
   "description": "MediaSave Pro - clean multi-platform social media downloader (Next.js 14 frontend)",
   "scripts": {
     "dev": "next dev",
+    "prebuild": "node scripts/copy-backend.mjs",
     "build": "next build",
     "start": "next start",
     "typecheck": "tsc --noEmit"

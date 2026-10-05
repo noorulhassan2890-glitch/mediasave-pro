@@ -9,9 +9,12 @@
 
 [build.environment]
   NODE_VERSION = "20"
+  PYTHON_VERSION = "3.12"
   # NEXT_PUBLIC_* values are inlined at build time, so set them per-site:
-  #   netlify env:set NEXT_PUBLIC_API_URL https://mediasave-api.onrender.com
+  #   netlify env:set NEXT_PUBLIC_API_URL  https://<your-site>.netlify.app
   #   netlify env:set NEXT_PUBLIC_SITE_URL https://<your-site>.netlify.app
+  # The API lives on the same origin as the site (see the function below), so
+  # NEXT_PUBLIC_API_URL equals NEXT_PUBLIC_SITE_URL in production.
   # (kept out of this file on purpose — values here override the site settings)
 
 [[plugins]]
@@ -38,7 +41,27 @@
   [headers.values]
     Cache-Control = "public, max-age=604800"
 
-# ---------------------------------------------------------------- redirects --
+# ------------------------------------------------------------ API function --
+# The FastAPI backend runs as a Python function (Mangum + Lambda), so the whole
+# app is served from one Netlify origin — no separate API host, no CORS.
+# `_backend/` is a build-time copy of backend/app (scripts/copy-backend.mjs).
+[functions]
+  directory = "netlify/functions"
+  included_files = ["netlify/functions/_backend/**"]
+
+[functions."*".environment]
+  TMP_DIR = "/tmp"
+  PYTHONDONTWRITEBYTECODE = "1"
+  EXTRACT_TIMEOUT = "25"
+
+# ------------------------------------------------------- API → Lambda proxy --
+# status 200 = internal rewrite, so the browser sees /api/... (same origin).
+[[redirects]]
+  from = "/api/*"
+  to = "/.netlify/functions/api/:splat"
+  status = 200
+  force = true
+
 # Legacy/short slugs → the canonical landing pages (keyword backlinks).
 [[redirects]]
   from = "/ig-downloader"
