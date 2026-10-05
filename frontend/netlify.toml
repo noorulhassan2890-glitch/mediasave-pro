@@ -9,10 +9,10 @@
 
 [build.environment]
   NODE_VERSION = "20"
-  # NEXT_PUBLIC_* values are inlined at build time, so they must be set here
-  # (or in the Netlify UI under Site settings → Environment).
-  NEXT_PUBLIC_API_URL = "http://localhost:8000"
-  NEXT_PUBLIC_SITE_URL = "http://localhost:3000"
+  # NEXT_PUBLIC_* values are inlined at build time, so set them per-site:
+  #   netlify env:set NEXT_PUBLIC_API_URL https://mediasave-api.onrender.com
+  #   netlify env:set NEXT_PUBLIC_SITE_URL https://<your-site>.netlify.app
+  # (kept out of this file on purpose — values here override the site settings)
 
 [[plugins]]
   package = "@netlify/plugin-nextjs"
