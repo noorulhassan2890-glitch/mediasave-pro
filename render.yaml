@@ -21,9 +21,9 @@ services:
       - key: PYTHON_VERSION
         value: "3.12.11"
       - key: ALLOWED_ORIGINS
-        # ⚠️ Replace with your real Netlify domain after the first deploy,
-        #    e.g. https://mediasave-pro.netlify.app
-        sync: false
+        # ⚠️ Must list the real frontend origin(s), comma separated, else CORS
+        #    blocks every browser call. Current production frontend:
+        value: "https://mediasave-pro.netlify.app"
       - key: EXTRACT_TIMEOUT
         value: "30"
       - key: TMP_DIR
